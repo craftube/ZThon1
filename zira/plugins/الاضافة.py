@@ -1,11 +1,14 @@
-from telethon.tl.types import Channel, Chat, User
-from telethon.tl import functions, types
-from telethon.tl.functions.messages import  CheckChatInviteRequest, GetFullChatRequest
-from telethon.errors import (ChannelInvalidError, ChannelPrivateError, ChannelPublicGroupNaError, InviteHashEmptyError, InviteHashExpiredError, InviteHashInvalidError)
-from telethon.tl.functions.channels import GetFullChannelRequest, GetParticipantsRequest, InviteToChannelRequest
-from zira import *
+from telethon.errors import (
+    ChannelInvalidError,
+    ChannelPrivateError,
+    ChannelPublicGroupNaError,
+)
+from telethon.tl import functions
+from telethon.tl.functions.channels import GetFullChannelRequest
+from telethon.tl.functions.messages import GetFullChatRequest
+
 from zira import zedub
-from zira.utils import admin_cmd
+
 from ..core.managers import edit_delete, edit_or_reply
 
 
@@ -33,12 +36,14 @@ async def get_chatinfo(event):
             await event.reply("**⎉╎لم يتم العثور على المجموعة او القناة**")
             return None
         except ChannelPrivateError:
-            await event.reply("**⎉╎لا يمكنني استخدام الامر من الكروبات او القنوات الخاصة**")
+            await event.reply(
+                "**⎉╎لا يمكنني استخدام الامر من الكروبات او القنوات الخاصة**"
+            )
             return None
         except ChannelPublicGroupNaError:
             await event.reply("**⎉╎لم يتم العثور على المجموعة او القناة**")
             return None
-        except (TypeError, ValueError) as err:
+        except (TypeError, ValueError):
             await event.reply("**⎉╎رابط الكروب غير صحيح**")
             return None
     return chat_info
@@ -59,7 +64,7 @@ def inline_mention(user):
 def user_full_name(user):
     names = [user.first_name, user.last_name]
     names = [i for i in list(names) if i]
-    full_name = ' '.join(names)
+    full_name = " ".join(names)
     return full_name
 
 

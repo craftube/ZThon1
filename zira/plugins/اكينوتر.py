@@ -11,10 +11,9 @@ from telethon import Button
 from telethon.errors import BotMethodInvalidError
 from telethon.events import CallbackQuery, InlineQuery
 
-from . import zedub
-
 from ..Config import Config
 from ..core.decorators import check_owner
+from . import zedub
 
 games = {}
 aki_photo = "https://graph.org/file/b0ff07069e8637783fdae.jpg"
