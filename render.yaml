@@ -30,6 +30,6 @@ services:
         value: Asia/Baghdad 
       - key: DATABASE_URL
         fromDatabase:
-          name: joker2
+          name: Zthon2
           property: connectionString   
     autoDeploy: false
